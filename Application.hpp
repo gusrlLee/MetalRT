@@ -5,8 +5,8 @@
 //  Created by 이현기 on 9/1/23.
 //
 
-#ifndef Application_hpp
-#define Application_hpp
+#ifndef APPLICATION_H
+#define APPLICATION_H
 
 #include <stdio.h>
 #include <iostream>
@@ -18,6 +18,9 @@
 
 // for window 
 #include "SDL2/SDL.h"
+#include "Camera.hpp"
+#include "Config.hpp"
+#include "BVH.hpp"
 
 class Application
 {
@@ -26,12 +29,18 @@ public:
     ~Application();
     void Init(int width, int height);
     void start();
+    void eventHandle();
     
 private:
     // Main widnow of Application
-    SDL_Window *mWindow;
+    SDL_Window *m_window;
     // Renderer using Metal API in Main Window.
-    SDL_Renderer *mRenderer;
+    SDL_Renderer *m_renderer;
+    SDL_Event m_keyboard_input_data;
+    
+    Camera* m_player;
+    
+    bool m_system_status;
 };
 
-#endif /* Application_hpp */
+#endif /* APPLICATION_H */

@@ -15,6 +15,9 @@ include_directories(
 add_executable(${PROJECT_NAME}
     main.cpp
     Application.cpp
+    BVH.cpp
+    Camera.cpp
+    Timer.cpp
 )
 
 target_link_libraries( ${PROJECT_NAME}
