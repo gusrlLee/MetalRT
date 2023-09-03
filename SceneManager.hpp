@@ -20,12 +20,15 @@
 class SceneManager
 {
 public:
-    SceneData* getCurrentScene() { return m_scene_list[m_current_scene_index]; }
+    SceneData* getCurrentScene() { return m_current_scene_data; }
+    SceneData* getNextScene() { return m_next_scene_data; }
+    
+    void setCurrentScene(SceneData* scene) { m_current_scene_data = scene; }
+    void setNextScene(SceneData* scene) { m_next_scene_data = scene; }
     
 private:
-    int m_current_scene_index;
-    std::unordered_map<int, SceneData*> m_scene_list;
-    
+    SceneData* m_current_scene_data;
+    SceneData* m_next_scene_data;
 };
 
 #endif /* SCENE_MANAGER_H */

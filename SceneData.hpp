@@ -19,12 +19,13 @@ typedef BVH BVH_Data;
 class SceneData
 {
 public:
+    
 
 private:
-    Triangle* m_temp_data;
+    int m_scene_index;
+    Triangle *m_triangle_list;
+    BVH_node *m_bvh_nodes;
     BVH* m_bvh;
-    float m_index;
-    
 };
 
 #endif /* SCENE_DATA_H */

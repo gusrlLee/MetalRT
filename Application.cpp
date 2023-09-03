@@ -11,7 +11,7 @@
 Application::~Application()
 {
     delete m_player;
-    SDL_DestroyRenderer(m_renderer);
+    delete m_renderer;
     SDL_DestroyWindow(m_window);
     SDL_Quit();
 }
@@ -22,14 +22,7 @@ void Application::Init(int width, int height)
     SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
     SDL_InitSubSystem(SDL_INIT_VIDEO);
     m_window = SDL_CreateWindow("MetalRT", -1, -1, width, height, SDL_WINDOW_ALLOW_HIGHDPI);
-    m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_PRESENTVSYNC);
-    printf("Done.\n");
-    
-    auto swapchain = (CA::MetalLayer*)SDL_RenderGetMetalLayer(m_renderer);
-    auto device = swapchain->device();
-
-    auto name = device->name();
-    std::cout << "device name: " << name->utf8String() << std::endl;
+    m_renderer = new Renderer(m_window);
     
     vector_float3 camera_position;
     camera_position.x = -1.5f;
@@ -37,20 +30,36 @@ void Application::Init(int width, int height)
     camera_position.z = -2.5f;
     
     vector_float3 p[3];
-    p[0].x = -1; p[0].y = 1; p[0].z = 2;
-    p[1].x = 1; p[1].y = 1; p[1].z = 2;
+    p[0].x = -1; p[0].y =  1; p[0].z = 2;
+    p[1].x =  1; p[1].y =  1; p[1].z = 2;
     p[2].x = -1; p[2].y = -1; p[2].z = 2;
     
+    // setting define
     m_player = new Camera(p, camera_position);
     
-    m_system_status = ON; // status on
+    m_system_status = ON; // status on'
+    printf("Done.\n");
 }
 
 // rendering source
 void Application::start()
 {
+    // before prcessing of rendering, we pre-construction BVH data.
+    buildBVH();
+    
     while (m_system_status) {
+        // input data operation
         eventHandle();
+        
+        // if location of mesh is transformed, we have to update bvh info
+        updateBVH();
+        
+        // Trace ray.
+        m_renderer->draw();
+        
+ 
+        
+        
     }
 }
 
@@ -64,4 +73,14 @@ void Application::eventHandle()
             } break;
         }
     }
+}
+
+void Application::buildBVH()
+{
+    
+}
+
+void Application::updateBVH()
+{
+    
 }

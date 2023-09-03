@@ -21,6 +21,8 @@
 #include "Camera.hpp"
 #include "Config.hpp"
 #include "BVH.hpp"
+#include "SceneManager.hpp"
+#include "Renderer.hpp"
 
 class Application
 {
@@ -30,16 +32,23 @@ public:
     void Init(int width, int height);
     void start();
     void eventHandle();
+    void buildBVH();
+    void updateBVH();
     
 private:
     // Main widnow of Application
     SDL_Window *m_window;
     // Renderer using Metal API in Main Window.
-    SDL_Renderer *m_renderer;
+    Renderer *m_renderer;
+    // for get keyboard input data
     SDL_Event m_keyboard_input_data;
     
-    Camera* m_player;
+    // player
+    Camera *m_player;
+    // scene manager
+    SceneManager *m_scene_manager;
     
+    // system flag
     bool m_system_status;
 };
 
