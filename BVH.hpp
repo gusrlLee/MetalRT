@@ -45,6 +45,7 @@ public:
     BVH(const char* tri_file, int N);
     void build();
     void refit();
+    void setTransform( matrix_float4x4 transform );
     void del();
     // void intersect( Ray &ray ) ;
     
@@ -58,10 +59,14 @@ private:
     void subdivide( uint node_index );
     void updateNodeBounds( uint node_index );
     float findBestSplitPlane(BVH_node &node, int &axis, float &split_position);
+    
     BVH_node* m_nodes = 0;
     Triangle* m_tri = 0;
     uint* m_tri_index_list = 0;
     uint m_nodes_used, m_tri_count;
+    
+    matrix_float4x4 m_inv_transform_mat;
+    AABB3f m_bounds;
 };
 
 #endif /* BVH_H */

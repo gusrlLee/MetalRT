@@ -7,6 +7,13 @@
 
 #include "BVH.hpp"
 
+inline vector_float3 transformPosition(vector_float3 position, matrix_float4x4 mat)
+{
+    vector_float4 pos =  vector4(position, 1);
+    vector_float4 transformed_pos = matrix_multiply(pos, mat);
+    return vector3(transformed_pos.x, transformed_pos.y, transformed_pos.z);
+}
+
 BVH::BVH(const char* tri_file, int N)
 {
     FILE* file = fopen(tri_file, "r");
@@ -61,7 +68,46 @@ void BVH::build()
     auto start = GetTime();
     subdivide( 0 );
     auto end = GetTime();
-    std::cout << "[LOG] BVH construction in " << (end - start) / 1000.0f << " ms" << std::endl;
+    printf("[LOG] BVH construction in %.3f ms \n", (end - start) / 1000.0f);
+}
+
+void BVH::refit()
+{
+    auto start = GetTime();
+    for (int i=m_nodes_used - 1; i>=0; i--)
+    {
+        if ( i != 1)
+        {
+            BVH_node &node = m_nodes[i];
+            if (node.isLeaf())
+            {
+                updateNodeBounds( i );
+                continue;
+            }
+            BVH_node &left_child_node = m_nodes[node.left_first];
+            BVH_node &right_child_node = m_nodes[node.left_first + 1];
+            node.aabb.min = fminf(left_child_node.aabb.min, right_child_node.aabb.min);
+            node.aabb.max = fmaxf(left_child_node.aabb.max, right_child_node.aabb.max);
+        }
+    }
+    auto end = GetTime();
+    printf("[LOG] BVH refitted in %.3f ms \n", (end - start) / 1000.0f);
+}
+
+void BVH::setTransform(matrix_float4x4 transform)
+{
+    m_inv_transform_mat = simd_inverse(transform);
+    vector_float3 bound_min = m_nodes[0].aabb.min;
+    vector_float3 bound_max = m_nodes[0].aabb.max;
+    m_bounds = AABB3f();
+    m_bounds.max = vector3(-1e30f, -1e30f, -1e30f);
+    m_bounds.min = vector3(1e30f, 1e30f, 1e30f);
+    
+    
+    for (int i=0; i<8; i++)
+    {
+        m_bounds.grow(transformPosition(vector3(i & 1 ? bound_max.x : bound_min.x, i & 2 ? bound_max.y : bound_min.y, i & 4 ? bound_max.z : bound_min.z), transform));
+    }
 }
 
 void BVH::updateNodeBounds(uint node_index)
