@@ -2,7 +2,7 @@
 //  BVH.hpp
 //  MetalRT
 //
-//  Created by 이현기 on 9/1/23.
+//  Created by 이현기 on 9/4/23.
 //
 
 #ifndef BVH_H
@@ -10,44 +10,58 @@
 
 #include <stdio.h>
 #include <iostream>
-#include <simd/simd.h>
+#include <algorithm>
 
 #include "Primitive.hpp"
 #include "Math.hpp"
+#include "Timer.hpp"
 
-typedef struct AABB3f {
-    vector_float3 min;
-    vector_float3 max;
-    void grow(vector_float3 p) { min = fminf(min, p), max = fmaxf(max, p); }
-    float Area()
-    {
-        float e[3];
-        e[0] = max.x - min.x;
-        e[1] = max.y - min.y;
-        e[2] = max.z - min.z;
+#define BINS 8
 
-        return e[0] * e[1] + e[1] * e[2] + e[2] * e[0]; // return e.x * e.y + e.y * e.z + e.z * e.x;
-    }
-} AABB3f;
+typedef struct Bin
+{
+    AABB3f bounds;
+    int tri_count = 0;
+} Bin;
 
-typedef struct BVH_node {
+typedef struct BVH_node
+{
     AABB3f aabb;
-    int left_first, tri_count;
+    int tri_count;
+    int left_first;
     bool isLeaf() { return tri_count > 0; }
+    float calculateNodeCost()
+    {
+        vector_float3 e = aabb.max - aabb.min;
+        return (e.x * e.y + e.y * e.z + e.z * e.x) * tri_count;
+    }
+    
 } BVH_node;
 
-typedef struct BVH {
-    int root_index;
-    int total_number_of_triangles;
-    int used_nodes;
-    BVH_node *nodes;
-    Triangle *triangle_list;
-} BVH_data;
-
-void BVH_build(BVH_data* bvh, int total_number_of_triagles);
-void BVH_del(BVH_data* bvh);
-void BVH_updateBoundBox(BVH_data* bvh, int node_index);
-void BVH_subdivide(BVH_data* bvh, int node_index);
-float BVH_evaluationSAH(BVH_node &node, Triangle *triangle_vertex_list, int axis, float pos);
+class BVH
+{
+public:
+    BVH() = default;
+    BVH(const char* tri_file, int N);
+    void build();
+    void refit();
+    void del();
+    // void intersect( Ray &ray ) ;
+    
+private:
+    void swap( const uint a, const uint b )
+    {
+        uint t = m_tri_index_list[a];
+        m_tri_index_list[a] = m_tri_index_list[b];
+        m_tri_index_list[b] = t;        
+    }
+    void subdivide( uint node_index );
+    void updateNodeBounds( uint node_index );
+    float findBestSplitPlane(BVH_node &node, int &axis, float &split_position);
+    BVH_node* m_nodes = 0;
+    Triangle* m_tri = 0;
+    uint* m_tri_index_list = 0;
+    uint m_nodes_used, m_tri_count;
+};
 
 #endif /* BVH_H */

@@ -13,7 +13,6 @@
 #include <unordered_map>
 
 
-#include "BVH.hpp"
 #include "SceneData.hpp"
 #include "Camera.hpp"
 

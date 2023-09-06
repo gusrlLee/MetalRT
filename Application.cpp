@@ -10,8 +10,8 @@
 
 Application::~Application()
 {
-    delete m_player;
-    delete m_renderer;
+//    delete m_player;
+//    delete m_renderer;
     SDL_DestroyWindow(m_window);
     SDL_Quit();
 }
@@ -22,7 +22,7 @@ void Application::Init(int width, int height)
     SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
     SDL_InitSubSystem(SDL_INIT_VIDEO);
     m_window = SDL_CreateWindow("MetalRT", -1, -1, width, height, SDL_WINDOW_ALLOW_HIGHDPI);
-    m_renderer = new Renderer(m_window);
+//    m_renderer = new Renderer(m_window);
     
     vector_float3 camera_position;
     camera_position.x = -1.5f;
@@ -35,7 +35,7 @@ void Application::Init(int width, int height)
     p[2].x = -1; p[2].y = -1; p[2].z = 2;
     
     // setting define
-    m_player = new Camera(p, camera_position);
+//    m_player = new Camera(p, camera_position);
     
     m_system_status = ON; // status on'
     printf("Done.\n");
@@ -55,11 +55,7 @@ void Application::start()
         updateBVH();
         
         // Trace ray.
-        m_renderer->draw();
-        
- 
-        
-        
+//        m_renderer->draw();
     }
 }
 
@@ -77,7 +73,9 @@ void Application::eventHandle()
 
 void Application::buildBVH()
 {
-    
+    std::string file_name = "../Assets/armadillo.tri";
+    BVH bvh = BVH( file_name.c_str(), 30000 );
+    std::cout << "BVH_construction Done .. " << std::endl;
 }
 
 void Application::updateBVH()
