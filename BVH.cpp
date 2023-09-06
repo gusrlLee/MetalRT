@@ -14,6 +14,45 @@ inline vector_float3 transformPosition(vector_float3 position, matrix_float4x4 m
     return vector3(transformed_pos.x, transformed_pos.y, transformed_pos.z);
 }
 
+inline vector_float3 transformVector(vector_float3 vector, matrix_float4x4 mat)
+{
+    vector_float4 vec = vector4(vector, 0);
+    vector_float4 transformed_vec = matrix_multiply(vec, mat);
+    return vector3(transformed_vec.x, transformed_vec.y, transformed_vec.z);
+}
+
+void intersectTriangle(Ray& ray, const Triangle& triangle)
+{
+    const vector_float3 edge1 = triangle.vertex[1] - triangle.vertex[0];
+    const vector_float3 edge2 = triangle.vertex[2] - triangle.vertex[0];
+    const vector_float3 h = simd_cross(ray.d, edge2);
+    
+    const float a = simd_dot(edge1, h);
+    if (a > -0.00001f && a < 0.00001f) return;
+    
+    const float f = 1 / a;
+    const vector_float3 s = ray.o - triangle.vertex[0];
+    const float u = f * simd_dot(s, h);
+    if (u < 0 || u > 1) return;
+    
+    const vector_float3 q = simd_cross(s, edge1);
+    const float v = f * simd_dot(ray.d, q);
+    if (v < 0 || u + v > 1) return;
+    const float t = f * simd_dot( edge2, q );
+    if (t > 0.0001f) ray.t = std::fmin( ray.t, t );
+}
+
+inline float intersectAABB(const Ray& ray, const vector_float3 bmin, const vector_float3 bmax)
+{
+    float tx1 = (bmin.x - ray.o.x) * ray.rd.x, tx2 = (bmax.x - ray.o.x) * ray.rd.x;
+    float tmin = std::fmin( tx1, tx2 ), tmax = std::fmax( tx1, tx2 );
+    float ty1 = (bmin.y - ray.o.y) * ray.rd.y, ty2 = (bmax.y - ray.o.y) * ray.rd.y;
+    tmin = std::fmax( tmin, std::fmin( ty1, ty2 ) ), tmax = std::fmin( tmax, std::fmax( ty1, ty2 ) );
+    float tz1 = (bmin.z - ray.o.z) * ray.rd.z, tz2 = (bmax.z - ray.o.z) * ray.rd.z;
+    tmin = std::fmax( tmin, std::fmin( tz1, tz2 ) ), tmax = std::fmin( tmax, std::fmax( tz1, tz2 ) );
+    if (tmax >= tmin && tmin < ray.t && tmax > 0) return tmin; else return 1e30f;
+}
+
 BVH::BVH(const char* tri_file, int N)
 {
     FILE* file = fopen(tri_file, "r");
@@ -235,4 +274,63 @@ void BVH::subdivide(uint node_index)
     
     subdivide( left_child_idx );
     subdivide( right_child_idx );
+}
+
+void BVH::intersect(Ray &ray)
+{
+    Ray backup_ray = ray;
+    ray.o = transformPosition(ray.o, m_inv_transform_mat);
+    ray.d = transformVector(ray.d, m_inv_transform_mat);
+    ray.rd = vector3( 1 / ray.d.x, 1 / ray.d.y, 1 / ray.d.z );
+    
+    // for traversal
+    BVH_node* node = &m_nodes[0], *stack[64];
+    uint stack_ptr = 0;
+    
+    while (1)
+    {
+        if (node->isLeaf())
+        {
+            for (uint i = 0; i<node->tri_count; i++)
+            {
+                intersectTriangle( ray, m_tri[m_tri_index_list[node->left_first + i]] );
+            }
+            if (stack_ptr == 0) break; else node = stack[--stack_ptr];
+            continue;
+        }
+        
+        BVH_node* child1 = &m_nodes[node->left_first];
+        BVH_node* child2 = &m_nodes[node->left_first + 1];
+        
+        float dist1 = intersectAABB(ray, child1->aabb.min, child1->aabb.max);
+        float dist2 = intersectAABB(ray, child2->aabb.min, child2->aabb.max);
+        
+        if (dist1 > dist2)
+        {
+            BVH_node *temp;
+            float temp_dist;
+            
+            temp_dist = dist1;
+            dist1 = dist2;
+            dist2 = temp_dist;
+            
+            temp = child1;
+            child1 = child2;
+            child2 = temp;
+        }
+        
+        if (dist1 == 1e30f)
+        {
+            if (stack_ptr == 0) break; else node = stack[--stack_ptr];
+        }
+        else
+        {
+            node = child1;
+            if (dist2 != 1e30f) stack[stack_ptr++] = child2;
+        }
+    }
+    
+    
+    backup_ray.t = ray.t;
+    ray = backup_ray;
 }

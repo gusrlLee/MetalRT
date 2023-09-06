@@ -14,6 +14,7 @@
 
 #include "Primitive.hpp"
 #include "Math.hpp"
+#include "Ray.hpp"
 #include "Timer.hpp"
 
 #define BINS 8
@@ -46,6 +47,7 @@ public:
     void build();
     void refit();
     void setTransform( matrix_float4x4 transform );
+    void intersect(Ray &ray);
     void del();
     // void intersect( Ray &ray ) ;
     

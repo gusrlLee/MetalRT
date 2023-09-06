@@ -13,7 +13,9 @@
 #include <simd/simd.h>
 
 #include "BVH.hpp"
+#include "Ray.hpp"
 #include "Primitive.hpp"
+#include "Timer.hpp"
 
 typedef struct TLAS_node {
     AABB3f aabb;
